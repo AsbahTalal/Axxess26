@@ -1,5 +1,6 @@
-kid_name,date,exercise_type,duration_minutes
-Liam Johnson,2026-02-15,Soccer,45
-Liam Johnson,2026-02-16,Riding Bike,30
-Sophia Johnson,2026-02-15,Dance,25
-Sophia Johnson,2026-02-16,Playground,40
+kid_name,date,duration_minutes
+Liam Johnson,2026-02-15,45
+Liam Johnson,2026-02-16,30
+Sophia Johnson,2026-02-15,25
+Sophia Johnson,2026-02-16,40
+
