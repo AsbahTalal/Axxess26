@@ -96,14 +96,8 @@ def _build_template_summary(data: dict[str, Any]) -> tuple[str, list[str]]:
 
     school = data.get("school_mood") or []
     if school:
-        ratings = [s.get("mood_rating") for s in school if s.get("mood_rating") is not None]
-        avg_mood = sum(ratings) / len(ratings) if ratings else None
-        recent_notes = [s.get("notes") for s in school[-3:] if s.get("notes")]
-        mood_line = "**School & mood**"
-        if avg_mood is not None:
-            mood_line += f" — Average mood rating {avg_mood:.1f}/5"
-        if recent_notes:
-            mood_line += ". Recent notes: " + "; ".join(str(n) for n in recent_notes[:3])
+        had_fun_days = sum(1 for s in school if str(s.get("had_fun", "")).lower() == "yes")
+        mood_line = f"**School** — Had fun: {had_fun_days}/{len(school)} days"
         sections.append(mood_line)
 
     reminders = data.get("reminders") or []
