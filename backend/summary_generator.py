@@ -34,7 +34,7 @@ def _format_vaccination(v: dict) -> str:
     return s
 
 def _build_template_summary(data: dict[str, Any]) -> tuple[str, list[str]]:
-  """Build template summary and highlights from aggregated kid data. Returns (full_summary, highlights)."""
+    """Build template summary and highlights from aggregated kid data. Returns (full_summary, highlights)."""
     kid_name = data.get("kid_name", "")
     sections: list[str] = []
     profile = data.get("profile") or {}
