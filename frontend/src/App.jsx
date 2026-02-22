@@ -17,7 +17,11 @@ import Settings from "./pages/Settings";
 import CreateProfile from "./pages/CreateProfile";
 import Calendar from "./pages/Calendar";
 import Alerts from "./pages/Alerts";
+import LabelScan from "./pages/LabelScan";
 
+export default function App() {
+  return <LabelScan />;
+}
 export default function App() {
   return (
     <AuthProvider> {/* WRAPPED HERE */}
