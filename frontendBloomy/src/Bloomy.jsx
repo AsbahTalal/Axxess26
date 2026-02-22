@@ -1,0 +1,207 @@
+import { useState, useRef } from "react";
+import { C, G, AI_REPLIES, FALLBACK, MOCK_SCAN } from "./constants";
+
+// Screens
+import LandingPage    from "./pages/LandingPage";
+import AuthPage       from "./pages/AuthPage";
+import OnboardingPage from "./pages/OnboardingPage";
+
+// Dashboard tabs
+import PageOverview   from "./pages/dashboard/PageOverview";
+import PageWellness   from "./pages/dashboard/PageWellness";
+import PageDiet       from "./pages/dashboard/PageDiet";
+import PageCalendar   from "./pages/dashboard/PageCalendar";
+import PageRecords    from "./pages/dashboard/PageRecords";
+import PageAssistant  from "./pages/dashboard/PageAssistant";
+import PageSettings   from "./pages/dashboard/PageSettings";
+
+// ─── NAV ITEM (uses dashPage closure — kept here) ─────────────────
+function NavItem({ id, icon, label, dashPage, setDashPage }) {
+  return (
+    <div onClick={() => setDashPage(id)} className="nav-hover"
+      style={{ display:"flex", alignItems:"center", gap:"0.68rem", padding:"0.62rem 0.75rem", borderRadius:10, cursor:"pointer", fontWeight:500, fontSize:"0.855rem", color:dashPage===id?"#fff":C.ghost, background:dashPage===id?"rgba(255,255,255,0.15)":"transparent", transition:"all 0.16s", marginBottom:2 }}>
+      <span style={{ fontSize:"0.97rem", width:"1.25rem", textAlign:"center" }}>{icon}</span>{label}
+    </div>
+  );
+}
+
+export default function Bloomy() {
+  const [screen,   setScreen]   = useState("landing");
+  const [dashPage, setDashPage] = useState("overview");
+
+  // ── Onboarding ──────────────────────────────────────────────────
+  const [step,      setStep]      = useState(1);
+  const [gender,    setGender]    = useState("girl");
+  const [allergies, setAllergies] = useState(["🥛 Dairy"]);
+  const [bedMin,    setBedMin]    = useState(20*60+30);
+  const [wakeMin,   setWakeMin]   = useState(7*60);
+  const [obForm,    setObForm]    = useState({ name:"", dob:"", region:"", height:"", weight:"" });
+
+  // ── Parent + children ───────────────────────────────────────────
+  const [parentProfile, setParentProfile] = useState({
+    name:"Sarah Johnson", email:"sarah@example.com", phone:"+1 (555) 012-3456",
+    avatar:"👩", timezone:"America/New_York",
+  });
+  const [children, setChildren] = useState([
+    { id:1, name:"Emma", dob:"2018-06-12", gender:"girl", age:6, weight:"22 kg", height:"115 cm", bloodType:"A+", doctor:"Dr. Smith", allergies:["🥛 Dairy"], avatar:"👧", color:C.mocha },
+  ]);
+  const [activeChild,  setActiveChild]  = useState(0);
+  const [editParent,   setEditParent]   = useState(false);
+  const [addingChild,  setAddingChild]  = useState(false);
+  const [newChild,     setNewChild]     = useState({ name:"", dob:"", gender:"girl", weight:"", height:"", bloodType:"", doctor:"", avatar:"🧒" });
+
+  // ── Scanner ─────────────────────────────────────────────────────
+  const [scanResult, setScanResult] = useState(null);
+  const [scanning,   setScanning]   = useState(false);
+  const fileRef = useRef(null);
+
+  // ── Mood ────────────────────────────────────────────────────────
+  const [moodLog, setMoodLog] = useState([
+    { date:"Feb 15", happy:true  }, { date:"Feb 16", happy:true  }, { date:"Feb 17", happy:false },
+    { date:"Feb 18", happy:true  }, { date:"Feb 19", happy:true  }, { date:"Feb 20", happy:true  },
+    { date:"Feb 21", happy:null  },
+  ]);
+
+  // ── Chat ────────────────────────────────────────────────────────
+  const [messages,  setMessages]  = useState([
+    { ai:true, text:"Hi Sarah! I'm Emma's Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸" },
+    { ai:true, text:"⏰ Reminder: Emma has a check-up with Dr. Smith on Feb 22 at 10:00 AM. Want me to add it to your calendar?" },
+    { ai:true, text:"💊 Medication Alert: Emma's daily allergy med is due at 8:00 AM tomorrow. I'll send a watch nudge at 7:45 AM!" },
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [isTyping,  setIsTyping]  = useState(false);
+  const chatBottomRef = useRef(null);
+  const fallbackIdx   = useRef(0);
+
+  // ── Notifications ───────────────────────────────────────────────
+  const [notif, setNotif] = useState(null);
+
+  // ─── Derived ──────────────────────────────────────────────────
+  const child = children[activeChild] || children[0];
+
+  // ─── Helpers ──────────────────────────────────────────────────
+  const toggleAllergy = (tag) => setAllergies(p => p.includes(tag) ? p.filter(t => t !== tag) : [...p, tag]);
+
+  const adjustTime = (type, delta) =>
+    type === "bed" ? setBedMin(p => (p+delta+1440)%1440) : setWakeMin(p => (p+delta+1440)%1440);
+
+  const fireNotif = (title, body) => {
+    setNotif({ title, body });
+    setTimeout(() => setNotif(null), 3500);
+  };
+
+  const sendChat = (override) => {
+    const txt = (override ?? chatInput).trim();
+    if (!txt) return;
+    setMessages(p => [...p, { ai:false, text:txt }]);
+    setChatInput("");
+    setIsTyping(true);
+    setTimeout(() => {
+      const reply = AI_REPLIES[txt] || FALLBACK[fallbackIdx.current++ % FALLBACK.length];
+      setIsTyping(false);
+      setMessages(p => [...p, { ai:true, text:reply }]);
+      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior:"smooth" }), 50);
+    }, 1100);
+  };
+
+  const handleScan = (e) => {
+    if (!e.target.files?.length) return;
+    setScanning(true);
+    setScanResult(null);
+    setTimeout(() => { setScanning(false); setScanResult(MOCK_SCAN); }, 2200);
+  };
+
+  const saveNewChild = () => {
+    if (!newChild.name) return;
+    setChildren(p => [...p, { ...newChild, id:Date.now(), age:4, color:C.lavBlush }]);
+    setAddingChild(false);
+    setNewChild({ name:"", dob:"", gender:"girl", weight:"", height:"", bloodType:"", doctor:"", avatar:"🧒" });
+    fireNotif("🌸 Child Added", `${newChild.name}'s profile has been created!`);
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  //  SCREEN ROUTING
+  // ═══════════════════════════════════════════════════════════════
+  if (screen === "landing")
+    return <LandingPage setScreen={setScreen}/>;
+
+  if (screen === "login" || screen === "register")
+    return <AuthPage screen={screen} setScreen={setScreen} fireNotif={fireNotif}/>;
+
+  if (screen === "onboarding")
+    return (
+      <OnboardingPage
+        setScreen={setScreen}
+        step={step} setStep={setStep}
+        gender={gender} setGender={setGender}
+        allergies={allergies} toggleAllergy={toggleAllergy}
+        bedMin={bedMin} wakeMin={wakeMin}
+        obForm={obForm} setObForm={setObForm}
+        adjustTime={adjustTime}
+      />
+    );
+
+  // ═══════════════════════════════════════════════════════════════
+  //  DASHBOARD
+  // ═══════════════════════════════════════════════════════════════
+  const pages = {
+    overview:  <PageOverview  setDashPage={setDashPage} child={child} moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
+    wellness:  <PageWellness  moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
+    diet:      <PageDiet      child={child} scanResult={scanResult} setScanResult={setScanResult} scanning={scanning} setScanning={setScanning} fileRef={fileRef} handleScan={handleScan}/>,
+    calendar:  <PageCalendar  fireNotif={fireNotif}/>,
+    records:   <PageRecords/>,
+    assistant: <PageAssistant messages={messages} isTyping={isTyping} chatInput={chatInput} setChatInput={setChatInput} sendChat={sendChat} chatBottomRef={chatBottomRef}/>,
+    settings:  <PageSettings  parentProfile={parentProfile} setParentProfile={setParentProfile} editParent={editParent} setEditParent={setEditParent} addingChild={addingChild} setAddingChild={setAddingChild} newChild={newChild} setNewChild={setNewChild} children={children} setChildren={setChildren} activeChild={activeChild} setActiveChild={setActiveChild} saveNewChild={saveNewChild} fireNotif={fireNotif}/>,
+  };
+
+  return (
+    <div style={{ display:"flex", minHeight:"100vh", fontFamily:"'DM Sans',sans-serif", background:C.bg, color:C.ink }}>
+      <style>{G}</style>
+
+      {/* Toast notification */}
+      {notif && (
+        <div style={{ position:"fixed", top:"1.25rem", right:"1.25rem", zIndex:1000, background:C.card, border:`1px solid ${C.border}`, borderRadius:13, padding:"0.85rem 1.05rem", maxWidth:272, boxShadow:"0 8px 28px rgba(160,105,74,0.15)", animation:"slideIn 0.3s ease" }}>
+          <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:800, fontSize:"0.86rem", color:C.ink, marginBottom:"0.2rem" }}>{notif.title}</div>
+          <div style={{ fontSize:"0.76rem", color:C.muted }}>{notif.body}</div>
+        </div>
+      )}
+
+      {/* Sidebar */}
+      <aside style={{ width:222, minWidth:222, background:C.sidebar, display:"flex", flexDirection:"column", padding:"1.3rem 0.85rem", position:"sticky", top:0, height:"100vh", overflowY:"auto" }}>
+        <div onClick={() => setScreen("landing")} style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:"1.25rem", color:"#FAF5EE", padding:"0 0.42rem", marginBottom:"1.7rem", cursor:"pointer" }}>
+          bloomy<span style={{ color:C.caramel }}>.</span>
+        </div>
+
+        <NavItem id="overview"  icon="🏠" label="Overview"        dashPage={dashPage} setDashPage={setDashPage}/>
+        <NavItem id="wellness"  icon="📈" label="Wellness"         dashPage={dashPage} setDashPage={setDashPage}/>
+        <NavItem id="diet"      icon="🥑" label="Diet & Lifestyle" dashPage={dashPage} setDashPage={setDashPage}/>
+        <NavItem id="calendar"  icon="📅" label="Calendar"         dashPage={dashPage} setDashPage={setDashPage}/>
+        <NavItem id="records"   icon="📋" label="Medical Records"  dashPage={dashPage} setDashPage={setDashPage}/>
+        <NavItem id="assistant" icon="🤖" label="AI Assistant"     dashPage={dashPage} setDashPage={setDashPage}/>
+        <NavItem id="settings"  icon="⚙️" label="Settings"         dashPage={dashPage} setDashPage={setDashPage}/>
+
+        <div style={{ fontSize:"0.6rem", textTransform:"uppercase", letterSpacing:"0.08em", color:C.ghost, padding:"0 0.52rem", margin:"1rem 0 0.42rem" }}>My Children</div>
+        {children.map((ch, i) => (
+          <div key={ch.id} onClick={() => setActiveChild(i)} className="nav-hover"
+            style={{ display:"flex", alignItems:"center", gap:"0.48rem", borderRadius:10, padding:"0.48rem 0.62rem", cursor:"pointer", border:`1px solid ${activeChild===i?"rgba(255,255,255,0.22)":"transparent"}`, background:activeChild===i?"rgba(255,255,255,0.13)":"transparent", marginBottom:3, transition:"all 0.16s" }}>
+            <div style={{ width:22, height:22, borderRadius:"50%", background:"rgba(255,255,255,0.14)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.78rem" }}>{ch.avatar}</div>
+            <span style={{ fontSize:"0.81rem", fontWeight:activeChild===i?700:500, color:activeChild===i?"#fff":C.ghost }}>{ch.name}, {ch.age}</span>
+          </div>
+        ))}
+        <button onClick={() => setDashPage("settings")} style={{ width:"100%", padding:"0.42rem", border:"1px solid rgba(255,255,255,0.11)", borderRadius:8, background:"transparent", color:C.ghost, fontSize:"0.76rem", fontWeight:700, marginTop:2 }}>+ Add Child</button>
+
+        <div style={{ marginTop:"auto" }}>
+          <div onClick={() => setScreen("landing")} className="nav-hover"
+            style={{ display:"flex", alignItems:"center", gap:"0.52rem", padding:"0.52rem 0.62rem", borderRadius:9, cursor:"pointer", color:C.ghost, fontSize:"0.81rem", fontWeight:500 }}>
+            🚪 Log Out
+          </div>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main style={{ flex:1, overflowY:"auto", padding:"1.8rem 1.9rem" }}>
+        {pages[dashPage]}
+      </main>
+    </div>
+  );
+}
