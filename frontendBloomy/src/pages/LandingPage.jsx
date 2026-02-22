@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-
-// ── Scroll-reveal hook ──────────────────────────────────────
+import bloomyGif from "../kids.gif";// ── Scroll-reveal hook ──────────────────────────────────────
 function useReveal() {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -216,7 +215,17 @@ export default function LandingPage({ setScreen }) {
 
           <Reveal delay={0.15} style={{ display: "flex", justifyContent: "center", alignItems: "center", position: "relative" }}>
             <div className="hero-blob" style={{ width: 380, height: 340, background: "radial-gradient(ellipse at 40% 40%, #FDF0C0 0%, #FAE190 60%, #F5C842 100%)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 24px 60px rgba(212,146,10,0.18)" }}>
-              <span className="bear-wobble" style={{ fontSize: 110 }}>🐻</span>
+              <img
+  src={bloomyGif}
+  alt="Bloomy demo"
+  className="bear-wobble"
+  style={{
+    width: 600,
+    height: 600,
+    objectFit: "contain",
+    borderRadius: 20
+  }}
+/>
             </div>
             <div className="badge-float" style={{ position: "absolute", top: 10, right: 10, background: C.white, borderRadius: 14, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.1)" }}>
               <span style={{ fontSize: 20 }}>📊</span>
