@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { C, cardS, inp2 } from "../../constants";
 import { CT } from "../../components/Shared";
 
@@ -15,6 +15,11 @@ export default function PageSettings({
   saveNewChild, fireNotif,
 }) {
   const [pForm, setPForm] = useState({ ...parentProfile });
+
+  // Sync local form whenever the real parentProfile changes (e.g. Firebase loads)
+  useEffect(() => {
+    if (!editParent) setPForm({ ...parentProfile });
+  }, [parentProfile]);
 
   return (
     <>

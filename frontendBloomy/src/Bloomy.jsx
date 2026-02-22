@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { C, G, AI_REPLIES, FALLBACK, MOCK_SCAN } from "./constants";
 import { auth, db } from "./firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 // Screens
@@ -44,11 +44,10 @@ export default function Bloomy() {
 
   // ── Parent + children ───────────────────────────────────────────
   const [parentProfile, setParentProfile] = useState({
-    name:"Sarah Johnson", email:"sarah@example.com", phone:"+1 (555) 012-3456",
-    avatar:"👩", timezone:"America/New_York",
+    name:"", email:"", phone:"", avatar:"👩", timezone:"",
   });
   const [children, setChildren] = useState([
-    { id:1, name:"Emma", dob:"2018-06-12", gender:"girl", age:6, weight:"22 kg", height:"115 cm", bloodType:"A+", doctor:"Dr. Smith", allergies:["🥛 Dairy"], avatar:"👧", color:C.mocha },
+    { id:1, name:"", dob:"", gender:"girl", age:0, weight:"", height:"", bloodType:"", doctor:"", allergies:[], avatar:"👧", color:C.mocha },
   ]);
   const [activeChild,  setActiveChild]  = useState(0);
   const [editParent,   setEditParent]   = useState(false);
@@ -86,32 +85,39 @@ export default function Bloomy() {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserId(user.uid);
+        // Always seed profile from Firebase Auth (guaranteed reliable)
+        const authName  = user.displayName || "";
+        const authEmail = user.email || "";
+        setParentProfile(p => ({
+          ...p,
+          name:  authName  || p.name,
+          email: authEmail || p.email,
+        }));
         // Try to load saved profile + children from Firestore
         try {
           const snap = await getDoc(doc(db, "users", user.uid));
           if (snap.exists()) {
             const data = snap.data();
-            if (data.profile)  setParentProfile(p => ({ ...p, ...data.profile }));
+            // Merge Firestore profile — Firebase Auth displayName wins for name
+            const loadedName = authName || data.profile?.name || "";
+            setParentProfile(p => ({ ...p, ...data.profile, name: loadedName, email: authEmail || data.profile?.email || "" }));
             if (data.children?.length) {
               setChildren(data.children);
               setActiveChild(0);
-              // Personalize welcome messages for returning user
               const n = data.children[0].name;
-              const firstName = (data.profile?.name || "").split(" ")[0] || "there";
+              const firstName = (loadedName || "").split(" ")[0] || "there";
               setMessages([
                 { ai:true, text:`Hi ${firstName}! I'm ${n}'s Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸` },
                 { ai:true, text:`⏰ Reminder: ${n}'s check-up is coming up soon. Want me to add it to your calendar?` },
                 { ai:true, text:`💊 Medication Alert: ${n}'s daily allergy med is due at 8:00 AM tomorrow. I'll send a nudge at 7:45 AM!` },
               ]);
             }
-            // User has completed onboarding — go straight to dashboard
             setScreen("dashboard");
           } else {
             // New user — go to onboarding
             setScreen("onboarding");
           }
         } catch {
-          // Firestore unavailable (e.g. placeholder config) — still go to onboarding
           setScreen("onboarding");
         }
       } else {
@@ -127,6 +133,23 @@ export default function Bloomy() {
 
   // ─── Derived ──────────────────────────────────────────────────
   const child = children[activeChild] || children[0];
+
+  // Auto-personalize welcome messages whenever names become available
+  useEffect(() => {
+    const n = child?.name;
+    const firstName = parentProfile?.name?.split(" ")[0];
+    if (!n || !firstName) return;
+    setMessages(prev => {
+      // Don't overwrite an actual conversation (only touch initial AI-only messages)
+      if (prev.some(m => !m.ai)) return prev;
+      return [
+        { ai:true, text:`Hi ${firstName}! I'm ${n}'s Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸` },
+        { ai:true, text:`⏰ Reminder: ${n}'s check-up is coming up soon. Want me to add it to your calendar?` },
+        { ai:true, text:`💊 Medication Alert: ${n}'s daily allergy med is due at 8:00 AM tomorrow. I'll send a nudge at 7:45 AM!` },
+      ];
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [child?.name, parentProfile?.name]);
 
   // ─── Helpers ──────────────────────────────────────────────────
   const toggleAllergy = (tag) => setAllergies(p => p.includes(tag) ? p.filter(t => t !== tag) : [...p, tag]);
@@ -209,10 +232,17 @@ export default function Bloomy() {
     setChildren([newChildRecord]);
     setActiveChild(0);
 
-    // Update welcome messages with the real child name
-    const n = newChildRecord.name;
+    // Use Firebase Auth displayName as authoritative source — no stale closure risk
+    const savedName  = auth.currentUser?.displayName || parentProfile.name || "";
+    const savedEmail = auth.currentUser?.email        || parentProfile.email || "";
+
+    // Ensure parentProfile reflects final name before writing
+    setParentProfile(p => ({ ...p, name: savedName, email: savedEmail }));
+
+    const n         = newChildRecord.name;
+    const firstName = savedName.split(" ")[0] || "there";
     setMessages([
-      { ai:true, text:`Hi ${parentProfile.name.split(" ")[0] || "there"}! I'm ${n}'s Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸` },
+      { ai:true, text:`Hi ${firstName}! I'm ${n}'s Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸` },
       { ai:true, text:`⏰ Reminder: ${n}'s check-up is coming up soon. Want me to add it to your calendar?` },
       { ai:true, text:`💊 Medication Alert: ${n}'s daily allergy med is due at 8:00 AM tomorrow. I'll send a nudge at 7:45 AM!` },
     ]);
@@ -221,11 +251,11 @@ export default function Bloomy() {
     if (userId) {
       try {
         await setDoc(doc(db, "users", userId), {
-          profile:  { name: parentProfile.name, email: parentProfile.email, avatar: parentProfile.avatar },
+          profile:  { name: savedName, email: savedEmail, avatar: parentProfile.avatar },
           children: [newChildRecord],
         });
       } catch {
-        // If Firestore isn't configured yet, just continue
+        // Firestore unavailable — continue anyway
       }
     }
     setScreen("dashboard");
