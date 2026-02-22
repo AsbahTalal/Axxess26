@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { C, G, STEPS, ALLERGIES, fmt, inp2 } from "../constants";
 
 export default function OnboardingPage({
@@ -5,6 +6,8 @@ export default function OnboardingPage({
   allergies, toggleAllergy, bedMin, wakeMin,
   obForm, setObForm, adjustTime,
 }) {
+  // Always start at step 1 when onboarding mounts
+  useEffect(() => { setStep(1); }, []);
   const pct = `${(step / 3) * 100}%`;
   const info = STEPS[step - 1];
 
