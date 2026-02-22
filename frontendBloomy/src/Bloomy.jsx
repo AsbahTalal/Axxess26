@@ -1,5 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { C, G, AI_REPLIES, FALLBACK, MOCK_SCAN } from "./constants";
+import { auth, db } from "./firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 // Screens
 import LandingPage    from "./pages/LandingPage";
@@ -15,7 +18,7 @@ import PageRecords    from "./pages/dashboard/PageRecords";
 import PageAssistant  from "./pages/dashboard/PageAssistant";
 import PageSettings   from "./pages/dashboard/PageSettings";
 
-// ─── NAV ITEM (uses dashPage closure — kept here) ─────────────────
+// ─── NAV ITEM ─────────────────────────────────────────────────────
 function NavItem({ id, icon, label, dashPage, setDashPage }) {
   return (
     <div onClick={() => setDashPage(id)} className="nav-hover"
@@ -26,8 +29,10 @@ function NavItem({ id, icon, label, dashPage, setDashPage }) {
 }
 
 export default function Bloomy() {
-  const [screen,   setScreen]   = useState("landing");
-  const [dashPage, setDashPage] = useState("overview");
+  const [screen,      setScreen]      = useState("landing");
+  const [dashPage,    setDashPage]    = useState("overview");
+  const [authLoading, setAuthLoading] = useState(true);
+  const [userId,      setUserId]      = useState(null);
 
   // ── Onboarding ──────────────────────────────────────────────────
   const [step,      setStep]      = useState(1);
@@ -64,9 +69,9 @@ export default function Bloomy() {
 
   // ── Chat ────────────────────────────────────────────────────────
   const [messages,  setMessages]  = useState([
-    { ai:true, text:"Hi Sarah! I'm Emma's Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸" },
-    { ai:true, text:"⏰ Reminder: Emma has a check-up with Dr. Smith on Feb 22 at 10:00 AM. Want me to add it to your calendar?" },
-    { ai:true, text:"💊 Medication Alert: Emma's daily allergy med is due at 8:00 AM tomorrow. I'll send a watch nudge at 7:45 AM!" },
+    { ai:true, text:"Hi! I'm your child's Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸" },
+    { ai:true, text:"⏰ Reminder: Check-up with the doctor coming up soon. Want me to add it to your calendar?" },
+    { ai:true, text:"💊 Medication Alert: Daily allergy med reminder for tomorrow at 8:00 AM. I'll send a nudge at 7:45 AM!" },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping,  setIsTyping]  = useState(false);
@@ -75,6 +80,50 @@ export default function Bloomy() {
 
   // ── Notifications ───────────────────────────────────────────────
   const [notif, setNotif] = useState(null);
+
+  // ── Firebase Auth listener ───────────────────────────────────────
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid);
+        // Try to load saved profile + children from Firestore
+        try {
+          const snap = await getDoc(doc(db, "users", user.uid));
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.profile)  setParentProfile(p => ({ ...p, ...data.profile }));
+            if (data.children?.length) {
+              setChildren(data.children);
+              setActiveChild(0);
+              // Personalize welcome messages for returning user
+              const n = data.children[0].name;
+              const firstName = (data.profile?.name || "").split(" ")[0] || "there";
+              setMessages([
+                { ai:true, text:`Hi ${firstName}! I'm ${n}'s Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸` },
+                { ai:true, text:`⏰ Reminder: ${n}'s check-up is coming up soon. Want me to add it to your calendar?` },
+                { ai:true, text:`💊 Medication Alert: ${n}'s daily allergy med is due at 8:00 AM tomorrow. I'll send a nudge at 7:45 AM!` },
+              ]);
+            }
+            // User has completed onboarding — go straight to dashboard
+            setScreen("dashboard");
+          } else {
+            // New user — go to onboarding
+            setScreen("onboarding");
+          }
+        } catch {
+          // Firestore unavailable (e.g. placeholder config) — still go to onboarding
+          setScreen("onboarding");
+        }
+      } else {
+        setUserId(null);
+        // Not signed in — stay on landing/auth
+        if (screen === "dashboard" || screen === "onboarding") setScreen("landing");
+      }
+      setAuthLoading(false);
+    });
+    return unsub;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Derived ──────────────────────────────────────────────────
   const child = children[activeChild] || children[0];
@@ -113,20 +162,74 @@ export default function Bloomy() {
 
   const saveNewChild = () => {
     if (!newChild.name) return;
-    setChildren(p => [...p, { ...newChild, id:Date.now(), age:4, color:C.lavBlush }]);
+    const updated = [...children, { ...newChild, id:Date.now(), age:4, color:C.lavBlush }];
+    setChildren(updated);
     setAddingChild(false);
     setNewChild({ name:"", dob:"", gender:"girl", weight:"", height:"", bloodType:"", doctor:"", avatar:"🧒" });
     fireNotif("🌸 Child Added", `${newChild.name}'s profile has been created!`);
+    // Persist to Firestore
+    if (userId) {
+      setDoc(doc(db, "users", userId), { children: updated }, { merge: true }).catch(() => {});
+    }
   };
 
   // ═══════════════════════════════════════════════════════════════
   //  SCREEN ROUTING
   // ═══════════════════════════════════════════════════════════════
+
+  // While Firebase resolves the auth state, show a minimal loading screen
+  if (authLoading) return (
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Playfair Display',serif", fontSize:"1.6rem", color:C.mocha }}>
+      bloomy<span style={{ color:C.caramel }}>.</span>
+    </div>
+  );
+
   if (screen === "landing")
     return <LandingPage setScreen={setScreen}/>;
 
   if (screen === "login" || screen === "register")
-    return <AuthPage screen={screen} setScreen={setScreen} fireNotif={fireNotif}/>;
+    return <AuthPage screen={screen} setScreen={setScreen} fireNotif={fireNotif} setParentProfile={setParentProfile}/>;
+
+  const finalizeOnboarding = async () => {
+    let age = 7;
+    if (obForm.dob) {
+      const birth = new Date(obForm.dob);
+      const now   = new Date();
+      age = now.getFullYear() - birth.getFullYear();
+      if (now.getMonth() < birth.getMonth() ||
+         (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
+      age = Math.max(0, age);
+    }
+    const newChildRecord = {
+      id: 1, name: obForm.name || "Your Child", dob: obForm.dob || "",
+      gender, age, weight: obForm.weight || "", height: obForm.height || "",
+      bloodType: "", doctor: "", allergies,
+      avatar: gender === "boy" ? "👦" : "👧", color: C.mocha,
+    };
+    setChildren([newChildRecord]);
+    setActiveChild(0);
+
+    // Update welcome messages with the real child name
+    const n = newChildRecord.name;
+    setMessages([
+      { ai:true, text:`Hi ${parentProfile.name.split(" ")[0] || "there"}! I'm ${n}'s Bloomy health assistant. Today: 3/6 hydration reminders done, slept 9.5 hrs, heart rate 88 bpm — looking lovely! 🌸` },
+      { ai:true, text:`⏰ Reminder: ${n}'s check-up is coming up soon. Want me to add it to your calendar?` },
+      { ai:true, text:`💊 Medication Alert: ${n}'s daily allergy med is due at 8:00 AM tomorrow. I'll send a nudge at 7:45 AM!` },
+    ]);
+
+    // Persist profile + child to Firestore
+    if (userId) {
+      try {
+        await setDoc(doc(db, "users", userId), {
+          profile:  { name: parentProfile.name, email: parentProfile.email, avatar: parentProfile.avatar },
+          children: [newChildRecord],
+        });
+      } catch {
+        // If Firestore isn't configured yet, just continue
+      }
+    }
+    setScreen("dashboard");
+  };
 
   if (screen === "onboarding")
     return (
@@ -138,19 +241,25 @@ export default function Bloomy() {
         bedMin={bedMin} wakeMin={wakeMin}
         obForm={obForm} setObForm={setObForm}
         adjustTime={adjustTime}
+        finalizeOnboarding={finalizeOnboarding}
       />
     );
 
   // ═══════════════════════════════════════════════════════════════
   //  DASHBOARD
   // ═══════════════════════════════════════════════════════════════
+  const handleLogout = async () => {
+    try { await signOut(auth); } catch { /* ignore */ }
+    setScreen("landing");
+  };
+
   const pages = {
-    overview:  <PageOverview  setDashPage={setDashPage} child={child} moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
-    wellness:  <PageWellness  moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
+    overview:  <PageOverview  setDashPage={setDashPage} child={child} parentProfile={parentProfile} moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
+    wellness:  <PageWellness  child={child} moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
     diet:      <PageDiet      child={child} scanResult={scanResult} setScanResult={setScanResult} scanning={scanning} setScanning={setScanning} fileRef={fileRef} handleScan={handleScan}/>,
-    calendar:  <PageCalendar  fireNotif={fireNotif}/>,
+    calendar:  <PageCalendar  child={child} fireNotif={fireNotif}/>,
     records:   <PageRecords/>,
-    assistant: <PageAssistant messages={messages} isTyping={isTyping} chatInput={chatInput} setChatInput={setChatInput} sendChat={sendChat} chatBottomRef={chatBottomRef}/>,
+    assistant: <PageAssistant messages={messages} isTyping={isTyping} chatInput={chatInput} setChatInput={setChatInput} sendChat={sendChat} chatBottomRef={chatBottomRef} child={child}/>,
     settings:  <PageSettings  parentProfile={parentProfile} setParentProfile={setParentProfile} editParent={editParent} setEditParent={setEditParent} addingChild={addingChild} setAddingChild={setAddingChild} newChild={newChild} setNewChild={setNewChild} children={children} setChildren={setChildren} activeChild={activeChild} setActiveChild={setActiveChild} saveNewChild={saveNewChild} fireNotif={fireNotif}/>,
   };
 
@@ -191,7 +300,7 @@ export default function Bloomy() {
         <button onClick={() => setDashPage("settings")} style={{ width:"100%", padding:"0.42rem", border:"1px solid rgba(255,255,255,0.11)", borderRadius:8, background:"transparent", color:C.ghost, fontSize:"0.76rem", fontWeight:700, marginTop:2 }}>+ Add Child</button>
 
         <div style={{ marginTop:"auto" }}>
-          <div onClick={() => setScreen("landing")} className="nav-hover"
+          <div onClick={handleLogout} className="nav-hover"
             style={{ display:"flex", alignItems:"center", gap:"0.52rem", padding:"0.52rem 0.62rem", borderRadius:9, cursor:"pointer", color:C.ghost, fontSize:"0.81rem", fontWeight:500 }}>
             🚪 Log Out
           </div>

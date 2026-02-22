@@ -1,43 +1,56 @@
-import { C, G, STEPS, ALLERGIES, fmt, inp2 } from "../constants";
+import { useEffect } from "react";
+import { C, G, STEPS, ALLERGIES, fmt } from "../constants";
+
+// ── Stable helper components (module-level = same reference every render) ──
+const oInpStyle = {
+  height:47, padding:"0 15px", border:`1.5px solid ${C.border}`,
+  borderRadius:13, fontFamily:"'Nunito',sans-serif", fontSize:14.5,
+  color:C.ink, background:C.card, outline:"none", width:"100%", appearance:"none",
+};
+
+function OInp(props) {
+  return <input {...props} style={{ ...oInpStyle, ...props.style }}/>;
+}
+
+function OLab({ children }) {
+  return <label style={{ fontSize:12.5, fontWeight:800, color:C.ink, display:"block", marginBottom:6 }}>{children}</label>;
+}
+
+function SidebarStep({ index, label, step, setStep }) {
+  const st = index < step ? "done" : index === step ? "active" : "idle";
+  return (
+    <div onClick={() => setStep(index)} style={{ display:"flex", alignItems:"flex-start", gap:15, padding:"13px 0", cursor:"pointer", position:"relative" }}>
+      {index < 3 && <div style={{ position:"absolute", left:16, top:48, width:2, height:"calc(100% - 16px)", background:st==="done"?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.1)" }}/>}
+      <div style={{ width:34, height:34, minWidth:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12.5, fontWeight:800, zIndex:1,
+        background:st==="active"?"rgba(255,255,255,0.88)":st==="done"?"rgba(255,255,255,0.22)":"transparent",
+        border:st==="idle"?"2px solid rgba(255,255,255,0.22)":st==="done"?"2px solid rgba(255,255,255,0.4)":"2px solid rgba(255,255,255,0.88)",
+        color:st==="active"?C.mocha:st==="done"?"#fff":"rgba(255,255,255,0.32)",
+        boxShadow:st==="active"?"0 0 0 4px rgba(255,255,255,0.13)":"none" }}>
+        {st==="done"?"✓":index}
+      </div>
+      <div style={{ paddingTop:6 }}>
+        <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:"1.1px", textTransform:"uppercase", marginBottom:3, color:st==="active"?"rgba(255,255,255,0.88)":st==="done"?"rgba(255,255,255,0.52)":"rgba(255,255,255,0.26)" }}>
+          {st==="active"?`Step ${index} — Current`:`Step ${index}`}
+        </div>
+        <div style={{ fontSize:13.5, fontWeight:700, color:st==="active"?"#fff":st==="done"?"rgba(255,255,255,0.58)":"rgba(255,255,255,0.24)" }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+// ───────────────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage({
   setScreen, step, setStep, gender, setGender,
   allergies, toggleAllergy, bedMin, wakeMin,
-  obForm, setObForm, adjustTime,
+  obForm, setObForm, adjustTime, finalizeOnboarding,
 }) {
-  const pct = `${(step / 3) * 100}%`;
+  useEffect(() => { setStep(1); }, []);
+
+  const pct  = `${(step / 3) * 100}%`;
   const info = STEPS[step - 1];
 
-  const OInp = (props) => (
-    <input {...props} style={{ height:47, padding:"0 15px", border:`1.5px solid ${C.border}`, borderRadius:13, fontFamily:"'Nunito',sans-serif", fontSize:14.5, color:C.ink, background:C.card, outline:"none", width:"100%", appearance:"none", ...props.style }}/>
-  );
-  const OLab = ({ children }) => (
-    <label style={{ fontSize:12.5, fontWeight:800, color:C.ink, display:"block", marginBottom:6 }}>{children}</label>
-  );
-
-  const SidebarStep = ({ index, label }) => {
-    const st = index < step ? "done" : index === step ? "active" : "idle";
-    return (
-      <div onClick={() => setStep(index)} style={{ display:"flex", alignItems:"flex-start", gap:15, padding:"13px 0", cursor:"pointer", position:"relative" }}>
-        {index < 3 && <div style={{ position:"absolute", left:16, top:48, width:2, height:"calc(100% - 16px)", background:st==="done"?"rgba(255,255,255,0.3)":"rgba(255,255,255,0.1)" }}/>}
-        <div style={{ width:34, height:34, minWidth:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12.5, fontWeight:800, zIndex:1,
-          background:st==="active"?"rgba(255,255,255,0.88)":st==="done"?"rgba(255,255,255,0.22)":"transparent",
-          border:st==="idle"?"2px solid rgba(255,255,255,0.22)":st==="done"?"2px solid rgba(255,255,255,0.4)":"2px solid rgba(255,255,255,0.88)",
-          color:st==="active"?C.mocha:st==="done"?"#fff":"rgba(255,255,255,0.32)",
-          boxShadow:st==="active"?"0 0 0 4px rgba(255,255,255,0.13)":"none" }}>
-          {st==="done"?"✓":index}
-        </div>
-        <div style={{ paddingTop:6 }}>
-          <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:"1.1px", textTransform:"uppercase", marginBottom:3, color:st==="active"?"rgba(255,255,255,0.88)":st==="done"?"rgba(255,255,255,0.52)":"rgba(255,255,255,0.26)" }}>
-            {st==="active"?`Step ${index} — Current`:`Step ${index}`}
-          </div>
-          <div style={{ fontSize:13.5, fontWeight:700, color:st==="active"?"#fff":st==="done"?"rgba(255,255,255,0.58)":"rgba(255,255,255,0.24)" }}>{label}</div>
-        </div>
-      </div>
-    );
-  };
-
-  const Step1 = () => (
+  // Step panels — called as plain functions, not JSX components
+  const renderStep1 = () => (
     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"20px 28px" }}>
       <div style={{ gridColumn:"span 2" }}>
         <OLab>Child's Full Name <span style={{ color:C.mocha }}>*</span></OLab>
@@ -55,20 +68,29 @@ export default function OnboardingPage({
           ))}
         </div>
       </div>
-      <div><OLab>Date of Birth <span style={{ color:C.mocha }}>*</span></OLab><OInp type="date" value={obForm.dob} onChange={e => setObForm(p => ({ ...p, dob:e.target.value }))}/></div>
+      <div>
+        <OLab>Date of Birth <span style={{ color:C.mocha }}>*</span></OLab>
+        <OInp type="date" value={obForm.dob} onChange={e => setObForm(p => ({ ...p, dob:e.target.value }))}/>
+      </div>
       <div>
         <OLab>Region</OLab>
-        <select style={{ height:47, padding:"0 15px", border:`1.5px solid ${C.border}`, borderRadius:13, fontFamily:"'Nunito',sans-serif", fontSize:14.5, color:C.ink, background:C.card, outline:"none", width:"100%", appearance:"none" }} value={obForm.region} onChange={e => setObForm(p => ({ ...p, region:e.target.value }))}>
+        <select style={{ ...oInpStyle }} value={obForm.region} onChange={e => setObForm(p => ({ ...p, region:e.target.value }))}>
           <option value="">Select region</option>
           <option>United States</option><option>United Kingdom</option><option>South Korea</option><option>Japan</option><option>Other</option>
         </select>
       </div>
-      <div><OLab>Height</OLab><OInp type="text" placeholder="e.g. 115 cm" value={obForm.height} onChange={e => setObForm(p => ({ ...p, height:e.target.value }))}/></div>
-      <div><OLab>Weight</OLab><OInp type="text" placeholder="e.g. 22 kg" value={obForm.weight} onChange={e => setObForm(p => ({ ...p, weight:e.target.value }))}/></div>
+      <div>
+        <OLab>Height</OLab>
+        <OInp type="text" placeholder="e.g. 115 cm" value={obForm.height} onChange={e => setObForm(p => ({ ...p, height:e.target.value }))}/>
+      </div>
+      <div>
+        <OLab>Weight</OLab>
+        <OInp type="text" placeholder="e.g. 22 kg" value={obForm.weight} onChange={e => setObForm(p => ({ ...p, weight:e.target.value }))}/>
+      </div>
     </div>
   );
 
-  const Step2 = () => (
+  const renderStep2 = () => (
     <>
       <label style={{ fontSize:12.5, fontWeight:800, color:C.ink, marginBottom:13, display:"block" }}>Known Allergies <span style={{ color:C.mocha }}>*</span></label>
       <div style={{ display:"flex", flexWrap:"wrap", gap:9 }}>
@@ -90,7 +112,7 @@ export default function OnboardingPage({
     </>
   );
 
-  const Step3 = () => (
+  const renderStep3 = () => (
     <>
       <div style={{ border:`1.5px solid ${C.border}`, borderRadius:13, background:C.card, overflow:"hidden", marginBottom:18 }}>
         {[["bed","🌙","#1A1208","Bedtime",fmt(bedMin),false],["wake","☀️",C.card2,"Wake-up",fmt(wakeMin),true]].map(([type,icon,bg,label,time,last]) => (
@@ -123,7 +145,11 @@ export default function OnboardingPage({
             <div style={{ width:40, height:40, background:"rgba(255,255,255,0.13)", borderRadius:11, display:"flex", alignItems:"center", justifyContent:"center", fontSize:19 }}>🌸</div>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:21, fontWeight:700, color:"#fff" }}>bloomy.</span>
           </div>
-          <nav style={{ flex:1 }}>{STEPS.map((s,i) => <SidebarStep key={i} index={i+1} label={s.label}/>)}</nav>
+          <nav style={{ flex:1 }}>
+            {STEPS.map((s,i) => (
+              <SidebarStep key={i} index={i+1} label={s.label} step={step} setStep={setStep}/>
+            ))}
+          </nav>
           <div style={{ borderTop:"1px solid rgba(255,255,255,0.12)", paddingTop:22 }}>
             <p style={{ fontSize:11.5, color:"rgba(255,255,255,0.48)", lineHeight:1.7, display:"flex", gap:8, margin:0 }}><span>🔒</span><span>Your child's data is encrypted and never shared.</span></p>
           </div>
@@ -145,16 +171,15 @@ export default function OnboardingPage({
             <div style={{ fontSize:10.5, fontWeight:800, letterSpacing:"1.7px", textTransform:"uppercase", color:C.mocha, marginBottom:9 }}>{info.eyebrow}</div>
             <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:27, fontWeight:700, color:C.ink, marginBottom:7, lineHeight:1.3 }}>{info.title}</h2>
             <p style={{ fontSize:13.5, color:C.mid, marginBottom:34, lineHeight:1.65, maxWidth:480 }}>{info.subtitle}</p>
-            {[<Step1/>,<Step2/>,<Step3/>][step-1]}
+            {step === 1 ? renderStep1() : step === 2 ? renderStep2() : renderStep3()}
           </div>
 
           {/* Footer nav */}
           <div style={{ borderTop:`1px solid ${C.border}`, padding:"20px 52px", background:C.card, display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", bottom:0 }}>
             <div style={{ display:"flex", alignItems:"center", gap:9 }}>
               <button onClick={() => setStep(p => Math.max(1, p-1))} style={{ visibility:step===1?"hidden":"visible", padding:"11px 20px", border:`1.5px solid ${C.border}`, borderRadius:13, background:C.card, fontSize:13.5, fontWeight:700, color:C.mid }}>← Back</button>
-              <button style={{ padding:"11px 14px", border:"none", background:"none", fontSize:13.5, fontWeight:600, color:C.muted }}>Skip</button>
             </div>
-            <button onClick={() => step===3 ? setScreen("dashboard") : setStep(p => Math.min(3, p+1))} style={{ padding:"12px 30px", border:"none", borderRadius:13, background:`linear-gradient(135deg,${C.mochaL},${C.mocha})`, fontSize:14.5, fontWeight:800, color:"#fff", boxShadow:"0 4px 15px rgba(160,105,74,0.25)", letterSpacing:"0.1px" }}>
+            <button onClick={() => step===3 ? finalizeOnboarding() : setStep(p => Math.min(3, p+1))} style={{ padding:"12px 30px", border:"none", borderRadius:13, background:`linear-gradient(135deg,${C.mochaL},${C.mocha})`, fontSize:14.5, fontWeight:800, color:"#fff", boxShadow:"0 4px 15px rgba(160,105,74,0.25)", letterSpacing:"0.1px" }}>
               {step===3?"🌸 Complete Setup":"Save & Continue →"}
             </button>
           </div>

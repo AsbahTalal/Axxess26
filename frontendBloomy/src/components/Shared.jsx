@@ -49,18 +49,39 @@ export function StatCard({ icon, label, value, unit, trend, ok, color }) {
   );
 }
 
-export function BarChart({ data, color }) {
+export function BarChart({ data, color, max = 100, ySteps = 4, barW = 32, barH = 120 }) {
+  const yTicks = Array.from({ length: ySteps + 1 }, (_, i) =>
+    Math.round(max * (ySteps - i) / ySteps)
+  );
+
   return (
-    <div>
-      <div style={{ display:"flex", alignItems:"flex-end", gap:5, height:108, marginBottom:3 }}>
-        {data.map((d,i)=>(
-          <div key={i} style={{ flex:1, height:"100%", display:"flex", alignItems:"flex-end" }}>
-            <div style={{ width:"100%", height:`${d.p}%`, borderRadius:"4px 4px 0 0", background:`linear-gradient(180deg,${color},${color}3A)`, border:i===data.length-1?`1.5px solid ${color}`:"none" }}/>
-          </div>
-        ))}
+    <div style={{ display:"flex", gap:4 }}>
+      {/* Y-axis */}
+      <div style={{ width:34, flexShrink:0 }}>
+        <div style={{ display:"flex", flexDirection:"column", justifyContent:"space-between", height:barH }}>
+          {yTicks.map(v => (
+            <div key={v} style={{ fontSize:"0.62rem", color:C.muted, textAlign:"right", lineHeight:1, fontWeight:600 }}>{v}</div>
+          ))}
+        </div>
+        <div style={{ height:22 }}/>
       </div>
-      <div style={{ display:"flex", gap:5 }}>
-        {data.map((d,i)=><div key={i} style={{ flex:1, textAlign:"center", fontSize:"0.59rem", color:C.muted }}>{d.l}</div>)}
+
+      {/* Scrollable chart area */}
+      <div style={{ flex:1, overflowX:"auto", minWidth:0 }}>
+        {/* Bars — flex:1 so they fill the width; minWidth prevents them from getting too narrow */}
+        <div style={{ display:"flex", alignItems:"flex-end", gap:5, height:barH }}>
+          {data.map((d,i) => (
+            <div key={i} style={{ flex:1, minWidth:barW, height:"100%", display:"flex", alignItems:"flex-end" }}>
+              <div title={String(d.v)} style={{ width:"100%", height:`${Math.max((d.v/max)*100,2)}%`, borderRadius:"5px 5px 0 0", background:`linear-gradient(180deg,${color},${color}3A)`, border:i===data.length-1?`1.5px solid ${color}`:"none" }}/>
+            </div>
+          ))}
+        </div>
+        {/* Labels */}
+        <div style={{ display:"flex", gap:5, borderTop:`1px solid ${C.border}`, paddingTop:4 }}>
+          {data.map((d,i) => (
+            <div key={i} style={{ flex:1, minWidth:barW, textAlign:"center", fontSize:"0.6rem", color:i===data.length-1?C.mocha:C.muted, fontWeight:i===data.length-1?800:500 }}>{d.l}</div>
+          ))}
+        </div>
       </div>
     </div>
   );
