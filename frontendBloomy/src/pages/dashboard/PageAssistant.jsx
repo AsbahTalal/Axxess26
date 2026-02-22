@@ -1,14 +1,14 @@
 import { C, cardS } from "../../constants";
 import { CT } from "../../components/Shared";
 
-const QUICK_QUESTIONS = [
-  "How is Emma sleeping this week?",
-  "When is Emma's next appointment?",
-  "Any health concerns I should know?",
-  "Remind me about Emma's medication",
-];
-
-export default function PageAssistant({ messages, isTyping, chatInput, setChatInput, sendChat, chatBottomRef }) {
+export default function PageAssistant({ messages, isTyping, chatInput, setChatInput, sendChat, chatBottomRef, child }) {
+  const name = child?.name || "your child";
+  const QUICK_QUESTIONS = [
+    `How is ${name} sleeping this week?`,
+    `When is ${name}'s next appointment?`,
+    "Any health concerns I should know?",
+    `Remind me about ${name}'s medication`,
+  ];
   return (
     <>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1.2rem" }}>
@@ -51,7 +51,7 @@ export default function PageAssistant({ messages, isTyping, chatInput, setChatIn
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
             onKeyDown={e => e.key==="Enter" && sendChat()}
-            placeholder="Ask me anything about Emma's health…"
+            placeholder={`Ask me anything about ${name}'s health…`}
             style={{ flex:1, background:C.card2, border:`1.5px solid ${C.border}`, borderRadius:10, padding:"0.62rem 0.9rem", color:C.ink, fontFamily:"'DM Sans',sans-serif", fontSize:"0.85rem", outline:"none" }}
             onFocus={e => e.target.style.borderColor=C.mocha}
             onBlur={e  => e.target.style.borderColor=C.border}
