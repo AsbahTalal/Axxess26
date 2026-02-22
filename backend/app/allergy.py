@@ -1,5 +1,3 @@
-# app/allergy.py
-
 def find_allergy_hits(text: str, allergies: list[str]):
     text = text.lower()
     hits = []

@@ -1,4 +1,3 @@
-# app/scoring.py
 import re
 
 def parse_nutrition(text: str):
