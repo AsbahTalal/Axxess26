@@ -32,8 +32,8 @@ def health():
 @app.get("/kids")
 def list_kids():
     """List all kid names. Frontend can use these for profile routes/tabs."""
-  names = get_all_kid_names()
-  return {"kids": names}
+    names = get_all_kid_names()
+    return {"kids": names}
 
 
 @app.get("/kids/{kid_name}/summary")
@@ -56,7 +56,6 @@ def get_kid_summary(
         result = {k: v for k, v in result.items() if k != "raw_data"}
     return result
 
-
 @app.get("/summaries")
 def get_all_kid_summaries(
     include_raw: bool = Query(False, description="Include full raw_data per kid"),
@@ -65,5 +64,5 @@ def get_all_kid_summaries(
     """Fetch summaries for all kids in one call (e.g. for dashboard or preload)."""
     results = generate_all_summaries(use_llm=use_llm)
     if not include_raw:
-      results = [{k: v for k, v in r.items() if k != "raw_data"} for r in results]
+        results = [{k: v for k, v in r.items() if k != "raw_data"} for r in results]
     return {"summaries": results}
