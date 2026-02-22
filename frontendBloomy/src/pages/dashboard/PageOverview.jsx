@@ -3,22 +3,23 @@ import { CT, AlertS, StatCard } from "../../components/Shared";
 import ChildBanner from "../../components/ChildBanner";
 import MoodRow from "../../components/MoodRow";
 
-export default function PageOverview({ setDashPage, child, moodLog, setMoodLog, fireNotif }) {
+export default function PageOverview({ setDashPage, child, parentProfile, moodLog, setMoodLog, fireNotif }) {
+  const firstName = (parentProfile?.name || "").split(" ")[0] || "Parent";
   return (
     <>
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1.2rem" }}>
         <div>
-          <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:"1.5rem", color:C.ink }}>Welcome, <span style={{ color:C.mocha }}>Sarah</span> 👋</div>
-          <div style={{ color:C.muted, fontSize:"0.83rem", marginTop:"0.18rem" }}>Feb 21 · Emma's daily snapshot</div>
+          <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:"1.5rem", color:C.ink }}>Welcome, <span style={{ color:C.mocha }}>{firstName}</span> 👋</div>
+          <div style={{ color:C.muted, fontSize:"0.83rem", marginTop:"0.18rem" }}>{child.name}'s daily snapshot</div>
         </div>
         <button onClick={() => setDashPage("settings")} style={{ padding:"0.48rem 1rem", border:`1.5px solid ${C.border}`, borderRadius:99, background:C.card, fontSize:"0.78rem", fontWeight:700, color:C.mid }}>⚙️ Settings</button>
       </div>
 
       <ChildBanner child={child} setDashPage={setDashPage}/>
 
-      <AlertS type="warn"    icon="⚠️">Emma's hydration is below target — only 3 of 6 reminders completed today.</AlertS>
-      <AlertS type="success" icon="💤">Emma slept 9.5 hours last night — excellent sleep! 🌸</AlertS>
+      <AlertS type="warn"    icon="⚠️">{child.name}'s hydration is below target — only 3 of 6 reminders completed today.</AlertS>
+      <AlertS type="success" icon="💤">{child.name} slept 9.5 hours last night — excellent sleep! 🌸</AlertS>
 
       {/* Stat cards */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"0.82rem", margin:"0.9rem 0" }}>
@@ -78,7 +79,7 @@ export default function PageOverview({ setDashPage, child, moodLog, setMoodLog, 
       <div style={cardS()}>
         <CT>⌚ Today's Watch Activity Log</CT>
         <div style={{ display:"flex", flexDirection:"column", gap:"0.38rem" }}>
-          <AlertS type="success" icon="⏰">8:00 AM — "Time to drink some water, Emma!" — ✅ Completed</AlertS>
+          <AlertS type="success" icon="⏰">8:00 AM — "Time to drink some water, {child.name}!" — ✅ Completed</AlertS>
           <AlertS type="success" icon="🏃">10:00 AM — "Let's do 5 jumping jacks!" — ✅ Completed</AlertS>
           <AlertS type="info"    icon="💧">12:00 PM — "Water time! Stay hydrated!" — ✅ Completed</AlertS>
           <AlertS type="warn"    icon="💧">2:00 PM — "Don't forget to drink water!" — ❌ Missed</AlertS>

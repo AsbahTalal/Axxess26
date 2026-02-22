@@ -23,8 +23,8 @@ export default function PageDiet({ child, scanResult, setScanResult, scanning, s
           <div style={{ background:`linear-gradient(135deg,${C.mocha},${C.mochaL})`, borderRadius:17, padding:"1.4rem 1.8rem", marginBottom:"1.2rem", display:"flex", alignItems:"center", gap:"1.2rem" }}>
             <div style={{ fontSize:"2.4rem" }}>🌿</div>
             <div>
-              <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:"1.1rem", color:"#fff", marginBottom:"0.32rem" }}>This week's focus for Emma</div>
-              <div style={{ fontSize:"0.95rem", color:"rgba(255,255,255,0.87)", lineHeight:1.6 }}>Hydration is Emma's biggest gap. Prioritize fun, creative ways to get her drinking more water throughout the day!</div>
+              <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:"1.1rem", color:"#fff", marginBottom:"0.32rem" }}>This week's focus for {child.name}</div>
+              <div style={{ fontSize:"0.95rem", color:"rgba(255,255,255,0.87)", lineHeight:1.6 }}>Hydration is {child.name}'s biggest gap. Prioritize fun, creative ways to get {child.gender === "boy" ? "him" : "her"} drinking more water throughout the day!</div>
             </div>
           </div>
 
@@ -40,7 +40,7 @@ export default function PageDiet({ child, scanResult, setScanResult, scanning, s
           </div>
 
           <div style={cardS()}>
-            <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:800, fontSize:"1.05rem", color:C.ink, marginBottom:"1rem" }}>🍽️ Sample Healthy Day Plan for Emma</div>
+            <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:800, fontSize:"1.05rem", color:C.ink, marginBottom:"1rem" }}>🍽️ Sample Healthy Day Plan for {child.name}</div>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"0.9rem" }}>
               {[
                 { time:"Breakfast", icon:"🥣", items:["Oat porridge + berries","Oat milk","Half a banana"] },
@@ -56,7 +56,7 @@ export default function PageDiet({ child, scanResult, setScanResult, scanning, s
               ))}
             </div>
             <div style={{ marginTop:"1rem", padding:"0.78rem 1rem", background:"rgba(160,105,74,0.06)", borderRadius:9, fontSize:"0.87rem", color:C.muted, lineHeight:1.65 }}>
-              🌸 <strong>Note:</strong> This plan avoids Dairy (Emma's allergy). Adjust based on taste preferences and your doctor's guidance.
+              🌸 <strong>Note:</strong> This plan is tailored for {child.name}{child.allergies?.length ? ` (avoids ${child.allergies.slice(0,2).join(", ")})` : ""}. Adjust based on taste preferences and your doctor's guidance.
             </div>
           </div>
         </>
@@ -84,13 +84,13 @@ export default function PageDiet({ child, scanResult, setScanResult, scanning, s
                 <div style={{ textAlign:"center", padding:"1.4rem", background:C.card2, borderRadius:11, border:`1px solid ${C.border}` }}>
                   <div style={{ fontSize:"1.9rem", marginBottom:"0.45rem", animation:"pulse 1s infinite" }}>🔍</div>
                   <div style={{ fontWeight:700, fontSize:"1rem", color:C.ink, marginBottom:"0.28rem" }}>Analyzing label…</div>
-                  <div style={{ fontSize:"0.88rem", color:C.muted }}>Checking against Emma's allergy profile</div>
+                  <div style={{ fontSize:"0.88rem", color:C.muted }}>Checking against {child.name}'s allergy profile</div>
                 </div>
               )}
 
               {!scanning && !scanResult && (
                 <div style={{ padding:"1rem", background:C.card2, borderRadius:11, border:`1px solid ${C.border}` }}>
-                  <div style={{ fontSize:"0.85rem", fontWeight:800, color:C.mocha, marginBottom:"0.5rem", textTransform:"uppercase", letterSpacing:"0.06em" }}>Emma's Known Allergies</div>
+                  <div style={{ fontSize:"0.85rem", fontWeight:800, color:C.mocha, marginBottom:"0.5rem", textTransform:"uppercase", letterSpacing:"0.06em" }}>{child.name}'s Known Allergies</div>
                   <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
                     {child.allergies.map(a => <span key={a} style={{ padding:"5px 12px", background:"rgba(192,96,96,0.09)", border:"1px solid rgba(192,96,96,0.22)", borderRadius:99, fontSize:"0.85rem", fontWeight:700, color:C.dustRose }}>{a}</span>)}
                   </div>
@@ -119,7 +119,7 @@ export default function PageDiet({ child, scanResult, setScanResult, scanning, s
                   <div style={{ borderRadius:11, padding:"1rem 1.2rem", marginBottom:"1rem", display:"flex", alignItems:"center", gap:"0.72rem", background:scanResult.safe?"rgba(95,173,116,0.09)":"rgba(192,96,96,0.09)", border:`1.5px solid ${scanResult.safe?C.sage:C.dustRose}` }}>
                     <span style={{ fontSize:"1.5rem" }}>{scanResult.safe?"✅":"🚨"}</span>
                     <div>
-                      <div style={{ fontWeight:800, fontSize:"1rem", color:scanResult.safe?C.sage:C.dustRose }}>{scanResult.safe?"Safe for Emma":"Allergen Alert!"}</div>
+                      <div style={{ fontWeight:800, fontSize:"1rem", color:scanResult.safe?C.sage:C.dustRose }}>{scanResult.safe?`Safe for ${child.name}`:"Allergen Alert!"}</div>
                       <div style={{ fontSize:"0.88rem", color:C.mid, marginTop:3 }}>{scanResult.warning}</div>
                     </div>
                   </div>

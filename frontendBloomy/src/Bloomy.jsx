@@ -126,7 +126,27 @@ export default function Bloomy() {
     return <LandingPage setScreen={setScreen}/>;
 
   if (screen === "login" || screen === "register")
-    return <AuthPage screen={screen} setScreen={setScreen} fireNotif={fireNotif}/>;
+    return <AuthPage screen={screen} setScreen={setScreen} fireNotif={fireNotif} setParentProfile={setParentProfile}/>;
+
+  const finalizeOnboarding = () => {
+    let age = 7;
+    if (obForm.dob) {
+      const birth = new Date(obForm.dob);
+      const now   = new Date();
+      age = now.getFullYear() - birth.getFullYear();
+      if (now.getMonth() < birth.getMonth() ||
+         (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
+      age = Math.max(0, age);
+    }
+    setChildren([{
+      id: 1, name: obForm.name || "Your Child", dob: obForm.dob || "",
+      gender, age, weight: obForm.weight || "", height: obForm.height || "",
+      bloodType: "", doctor: "", allergies,
+      avatar: gender === "boy" ? "👦" : "👧", color: C.mocha,
+    }]);
+    setActiveChild(0);
+    setScreen("dashboard");
+  };
 
   if (screen === "onboarding")
     return (
@@ -138,6 +158,7 @@ export default function Bloomy() {
         bedMin={bedMin} wakeMin={wakeMin}
         obForm={obForm} setObForm={setObForm}
         adjustTime={adjustTime}
+        finalizeOnboarding={finalizeOnboarding}
       />
     );
 
@@ -145,10 +166,10 @@ export default function Bloomy() {
   //  DASHBOARD
   // ═══════════════════════════════════════════════════════════════
   const pages = {
-    overview:  <PageOverview  setDashPage={setDashPage} child={child} moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
-    wellness:  <PageWellness  moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
+    overview:  <PageOverview  setDashPage={setDashPage} child={child} parentProfile={parentProfile} moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
+    wellness:  <PageWellness  child={child} moodLog={moodLog} setMoodLog={setMoodLog} fireNotif={fireNotif}/>,
     diet:      <PageDiet      child={child} scanResult={scanResult} setScanResult={setScanResult} scanning={scanning} setScanning={setScanning} fileRef={fileRef} handleScan={handleScan}/>,
-    calendar:  <PageCalendar  fireNotif={fireNotif}/>,
+    calendar:  <PageCalendar  child={child} fireNotif={fireNotif}/>,
     records:   <PageRecords/>,
     assistant: <PageAssistant messages={messages} isTyping={isTyping} chatInput={chatInput} setChatInput={setChatInput} sendChat={sendChat} chatBottomRef={chatBottomRef}/>,
     settings:  <PageSettings  parentProfile={parentProfile} setParentProfile={setParentProfile} editParent={editParent} setEditParent={setEditParent} addingChild={addingChild} setAddingChild={setAddingChild} newChild={newChild} setNewChild={setNewChild} children={children} setChildren={setChildren} activeChild={activeChild} setActiveChild={setActiveChild} saveNewChild={saveNewChild} fireNotif={fireNotif}/>,

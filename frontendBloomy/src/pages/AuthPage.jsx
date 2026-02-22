@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { C, G, inp2 } from "../constants";
 import { FLabel, BloomBtn, Divider } from "../components/Shared";
 
@@ -15,7 +16,10 @@ function AuthCard({ children, setScreen }) {
   );
 }
 
-export default function AuthPage({ screen, setScreen, fireNotif }) {
+export default function AuthPage({ screen, setScreen, fireNotif, setParentProfile }) {
+  const nameRef  = useRef(null);
+  const emailRef = useRef(null);
+
   if (screen === "login") return (
     <AuthCard setScreen={setScreen}>
       <div style={{ textAlign:"center", color:C.muted, fontSize:"0.83rem", marginBottom:"1.9rem" }}>Welcome back 🌸</div>
@@ -35,16 +39,28 @@ export default function AuthPage({ screen, setScreen, fireNotif }) {
     </AuthCard>
   );
 
+  // Register form
   return (
     <AuthCard setScreen={setScreen}>
       <div style={{ textAlign:"center", color:C.muted, fontSize:"0.83rem", marginBottom:"1.9rem" }}>Create your family's wellness hub 🌿</div>
       <FLabel>Parent Name</FLabel>
-      <input style={{ ...inp2, marginBottom:"0.95rem" }} type="text" placeholder="Sarah Johnson" />
+      <input ref={nameRef}  style={{ ...inp2, marginBottom:"0.95rem" }} type="text"     placeholder="Sarah Johnson" />
       <FLabel>Email</FLabel>
-      <input style={{ ...inp2, marginBottom:"0.95rem" }} type="email" placeholder="you@email.com" />
+      <input ref={emailRef} style={{ ...inp2, marginBottom:"0.95rem" }} type="email"    placeholder="you@email.com" />
       <FLabel>Password</FLabel>
-      <input style={{ ...inp2, marginBottom:"1.35rem" }} type="password" placeholder="Create a strong password" />
-      <BloomBtn onClick={() => setScreen("onboarding")}>Create Account &amp; Set Up Child →</BloomBtn>
+      <input                style={{ ...inp2, marginBottom:"1.35rem" }} type="password" placeholder="Create a strong password" />
+      <BloomBtn onClick={() => {
+        const name  = nameRef.current?.value.trim();
+        const email = emailRef.current?.value.trim();
+        if (setParentProfile && (name || email)) {
+          setParentProfile(p => ({
+            ...p,
+            name:  name  || p.name,
+            email: email || p.email,
+          }));
+        }
+        setScreen("onboarding");
+      }}>Create Account &amp; Set Up Child →</BloomBtn>
       <Divider/>
       <div style={{ textAlign:"center", color:C.muted, fontSize:"0.83rem" }}>
         Already have an account?{" "}

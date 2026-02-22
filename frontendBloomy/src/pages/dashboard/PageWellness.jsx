@@ -26,7 +26,7 @@ const TREND_DATA = WEEK_DATA.map(w => ({
   v: w.score,
 }));
 
-export default function PageWellness({ moodLog, setMoodLog, fireNotif }) {
+export default function PageWellness({ child, moodLog, setMoodLog, fireNotif }) {
   const [weekIdx, setWeekIdx] = useState(WEEK_DATA.length - 1); // start at current week
   const week = WEEK_DATA[weekIdx];
   const isCurrentWeek = weekIdx === WEEK_DATA.length - 1;
@@ -34,7 +34,7 @@ export default function PageWellness({ moodLog, setMoodLog, fireNotif }) {
   return (
     <>
       <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:"2rem", color:C.ink, marginBottom:"0.28rem" }}>📈 Wellness <span style={{ color:C.mocha }}>Trends</span></div>
-      <div style={{ color:C.muted, fontSize:"1rem", marginBottom:"1.2rem", fontWeight:600 }}>Emma's health data by week · use arrows to browse</div>
+      <div style={{ color:C.muted, fontSize:"1rem", marginBottom:"1.2rem", fontWeight:600 }}>{child.name}'s health data by week · use arrows to browse</div>
 
       {/* Week navigation */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"0.75rem 1.2rem", marginBottom:"1rem" }}>

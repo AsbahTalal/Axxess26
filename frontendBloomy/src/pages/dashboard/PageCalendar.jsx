@@ -20,7 +20,7 @@ const EVENTS = {
   "2026-3-15": [{ color:C.dustRose, title:"Follow-up Visit",     sub:"Dr. Smith",              time:"10:00 AM" }],
 };
 
-export default function PageCalendar({ fireNotif }) {
+export default function PageCalendar({ child, fireNotif }) {
   const [viewMonth, setViewMonth] = useState(1); // 0-indexed (1 = Feb)
   const [viewYear,  setViewYear]  = useState(2026);
   const [selectedDay, setSelectedDay] = useState(22);
@@ -59,7 +59,7 @@ export default function PageCalendar({ fireNotif }) {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1.3rem" }}>
         <div>
           <div style={{ fontFamily:"'Nunito',sans-serif", fontWeight:900, fontSize:"2rem", color:C.ink }}>📅 <span style={{ color:C.mocha }}>Calendar</span></div>
-          <div style={{ color:C.muted, fontSize:"1rem", marginTop:"0.2rem", fontWeight:600 }}>Emma's appointments and reminders</div>
+          <div style={{ color:C.muted, fontSize:"1rem", marginTop:"0.2rem", fontWeight:600 }}>{child.name}'s appointments and reminders</div>
         </div>
         <button onClick={() => fireNotif("📅 Event Added","New appointment saved!")} style={{ padding:"0.6rem 1.2rem", border:"none", borderRadius:10, background:C.mocha, color:"#fff", fontWeight:800, fontSize:"0.95rem", boxShadow:"0 3px 11px rgba(160,105,74,0.22)" }}>+ Add Event</button>
       </div>

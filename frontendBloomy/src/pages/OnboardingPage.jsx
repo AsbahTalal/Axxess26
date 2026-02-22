@@ -4,7 +4,7 @@ import { C, G, STEPS, ALLERGIES, fmt, inp2 } from "../constants";
 export default function OnboardingPage({
   setScreen, step, setStep, gender, setGender,
   allergies, toggleAllergy, bedMin, wakeMin,
-  obForm, setObForm, adjustTime,
+  obForm, setObForm, adjustTime, finalizeOnboarding,
 }) {
   // Always start at step 1 when onboarding mounts
   useEffect(() => { setStep(1); }, []);
@@ -155,9 +155,8 @@ export default function OnboardingPage({
           <div style={{ borderTop:`1px solid ${C.border}`, padding:"20px 52px", background:C.card, display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", bottom:0 }}>
             <div style={{ display:"flex", alignItems:"center", gap:9 }}>
               <button onClick={() => setStep(p => Math.max(1, p-1))} style={{ visibility:step===1?"hidden":"visible", padding:"11px 20px", border:`1.5px solid ${C.border}`, borderRadius:13, background:C.card, fontSize:13.5, fontWeight:700, color:C.mid }}>← Back</button>
-              <button style={{ padding:"11px 14px", border:"none", background:"none", fontSize:13.5, fontWeight:600, color:C.muted }}>Skip</button>
             </div>
-            <button onClick={() => step===3 ? setScreen("dashboard") : setStep(p => Math.min(3, p+1))} style={{ padding:"12px 30px", border:"none", borderRadius:13, background:`linear-gradient(135deg,${C.mochaL},${C.mocha})`, fontSize:14.5, fontWeight:800, color:"#fff", boxShadow:"0 4px 15px rgba(160,105,74,0.25)", letterSpacing:"0.1px" }}>
+            <button onClick={() => step===3 ? finalizeOnboarding() : setStep(p => Math.min(3, p+1))} style={{ padding:"12px 30px", border:"none", borderRadius:13, background:`linear-gradient(135deg,${C.mochaL},${C.mocha})`, fontSize:14.5, fontWeight:800, color:"#fff", boxShadow:"0 4px 15px rgba(160,105,74,0.25)", letterSpacing:"0.1px" }}>
               {step===3?"🌸 Complete Setup":"Save & Continue →"}
             </button>
           </div>
