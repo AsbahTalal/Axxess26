@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { C, G, inp2 } from "../constants";
 import { FLabel, BloomBtn, Divider } from "../components/Shared";
 import { auth } from "../firebase";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 function AuthCard({ children, setScreen }) {
   return (
@@ -121,7 +121,9 @@ export default function AuthPage({ screen, setScreen, fireNotif, setParentProfil
 
         setLoading(true);
         try {
-          await createUserWithEmailAndPassword(auth, email, pw);
+          const cred = await createUserWithEmailAndPassword(auth, email, pw);
+          // Store name in Firebase Auth so it's always available on user.displayName
+          if (name) await updateProfile(cred.user, { displayName: name });
           if (setParentProfile && (name || email)) {
             setParentProfile(p => ({ ...p, name: name || p.name, email: email || p.email }));
           }
