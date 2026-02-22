@@ -2,7 +2,6 @@ import { useState } from "react";
 import { C, cardS, DIET_ADVICE } from "../../constants";
 import { CT } from "../../components/Shared";
 
-}) {
 export default function PageDiet({ child, scanResult, setScanResult, scanning, setScanning, fileRef, handleScan }) {
   const [dietTab, setDietTab] = useState("advice");
 
